@@ -1,0 +1,31 @@
+#!/bin/bash
+    cp /etc/hosts /etc/hosts.org
+    echo -e "\n###SATELLITE\n"satellite IP"  istbılabıla.tr.xcd.net.intra   istbılabıla" >> /etc/hosts
+    cd /etc/yum.repos.d/
+	mkdir old_repos
+    mv *.repo old_repos/.
+    yum clean all
+    cd /root
+    SOURCEURL='https://istbılabıla.tr.xcd.net.intra'
+    if type wget >/dev/null 2>&1; then
+    	wget $SOURCEURL/pub/katello-ca-consumer-latest.noarch.rpm --no-check-certificate
+    	rpm -ivh katello-ca-consumer-latest.noarch.rpm
+    else
+    	echo "wget yuklu degil curl ile yuklenecek"
+    	curl -O $SOURCEURL/pub/katello-ca-consumer-latest.noarch.rpm -k -1
+    	rpm -ivh katello-ca-consumer-latest.noarch.rpm
+    fi
+    subscription-manager register --org=cardif_tr --environment=Library --username admin --password Aa34Bb35
+    subscription-manager attach --pool 8a2a13466a8bfa70016d95d55ca70ca3
+    subscription-manager refresh
+    subscription-manager list --consumed
+    yum clean all
+    RELEASE=$(awk '{print substr($7,1,1)}' /etc/redhat-release)
+    subscription-manager repos --list
+    if [ "$RELEASE" == 5 ]; then
+        subscription-manager repos --enable  rhel-$RELEASE-server-satellite-tools-6.2-rpms
+    else
+    	subscription-manager repos --enable  rhel-$RELEASE-server-satellite-tools-6.3-rpms
+    fi
+    yum -y install katello-agent
+    exit
